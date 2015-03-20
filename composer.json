@@ -1,0 +1,28 @@
+{
+    "name": "gossamer/pesedget",
+    "type": "library",
+    "description": "php web sockets news ticker",
+    "keywords": ["php","web sockets","chat","news ticker"],
+    "homepage": "https://github.com/dmeikle/ticker",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dave Meikle",
+            "email": "david@quantumunit.com",
+	    "homepage": "http://www.quantumunit.com",
+	    "role": "Developer"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+	"monolog/monolog": "1.*"
+    },
+    "require-dev": {
+	"phpunit/phpunit": "4.0.*"
+    },
+    "autoload": {
+	"psr-0": {
+            "Gossamer\\Sockets": "src/"
+        }
+    }
+}
