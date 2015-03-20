@@ -22,8 +22,7 @@ class Room {
     
     private $roomId;
     
-    
-    private $chatters;
+    private $allowedMemberList;
     
     private $listeners;
     
@@ -60,12 +59,12 @@ class Room {
         return $this->listeners;
     }
 
-    protected function getChatters() {
-        if(is_null($this->chatters)) {
-            $this->chatters = array();
+    protected function getAllowedMemberList() {
+        if(is_null($this->allowedMemberList)) {
+            $this->allowedMemberList = array();
         }
         
-        return $this->chatters;
+        return $this->allowedMemberList;
     }
 
     protected function getCategoryIdList() {
@@ -80,6 +79,15 @@ class Room {
         return in_array($categoryId, $this->categoryIdList);
     }
     
+    /**
+     * preconfigured list of members allowed to exist in this room
+     * 
+     * @param array $allowedMemberList
+     */
+    function setAllowedMemberList(array $allowedMemberList) {
+        $this->allowedMemberList = $allowedMemberList;
+    }
+
     public function notify(Message $message) {
         foreach($this->listeners as $listener) {
             @socket_write($listener->getSocket(),$message->getMessage(),strlen($message->getMessage()));
