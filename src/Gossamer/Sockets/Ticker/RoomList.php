@@ -11,6 +11,8 @@
 
 namespace Gossamer\Sockets\Ticker;
 
+use Gossamer\Sockets\Members\Member;
+
 /**
  * RoomList
  *

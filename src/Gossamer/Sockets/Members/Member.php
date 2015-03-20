@@ -9,7 +9,9 @@
  *  file that was distributed with this source code.
  */
 
-namespace Gossamer\Sockets\Ticker;
+namespace Gossamer\Sockets\Members;
+
+use Gossamer\Sockets\Ticker\Message;
 
 /**
  * Member

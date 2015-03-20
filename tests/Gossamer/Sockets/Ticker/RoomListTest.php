@@ -13,7 +13,7 @@ namespace tests\Gossamer\Sockets\Ticker;
 
 use Gossamer\Sockets\Ticker\Room;
 use Gossamer\Sockets\Ticker\RoomList;
-use Gossamer\Sockets\Ticker\Member;
+use Gossamer\Sockets\Members\Member;
 use Gossamer\Sockets\Ticker\Message;
 
 /**
