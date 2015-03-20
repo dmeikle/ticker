@@ -20,25 +20,51 @@ class Concierge {
     
     private $roomList;
     
+    private $memberCount = 0;
+    
     public function __construct() {
-        $roomList = new RoomList();
+        $this->roomList = new RoomList();
         $this->initRooms();
     }
     
     private function initRooms() {
         $room = new Room();
-        $room->setRoomId('room1');
+        $room->setRoomId('1');
         $room->setRoomName('emergency');
+        $room->setMemberIdList(array('192.168.2.120', '192.168.2.124', '192.168.2.132'));
         $this->roomList->addRoom($room);
         
         $room = new Room();
-        $room->setRoomId('room2');
+        $room->setRoomId('2');
         $room->setRoomName('construction');
         $this->roomList->addRoom($room);
         
     }
     
-    public function notify() {
-        
+    /**
+     * use the IP to identify the user
+     * 
+     * @param string $ip
+     * @param type $socket
+     */
+    public function addSocket($ip, &$socket) {
+        $member = new Member();
+        $member->setMemberId($ip);
+        $member->setSocket($socket);
+        //$member->setMemberId($this->memberCount++);
+        $this->roomList->addMember($member);
     }
+    
+    public function removeSocket($ip) {
+        $this->roomList->removeMember($ip);
+    }
+    
+    public function sendMessage($roomId, $msg) {
+        $message = new Message();
+        $message->setRoomId($roomId);
+        $message->setMessage($msg);
+        
+        $this->roomList->notifyRooms($message);
+    }
+
 }

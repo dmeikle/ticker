@@ -22,6 +22,25 @@ class Message {
     
     private $message;
     
+    private $roomId;
+    
+    private $eventName;
+    function getRoomId() {
+        return $this->roomId;
+    }
+
+    function getEventName() {
+        return $this->eventName;
+    }
+
+    function setRoomId($roomId) {
+        $this->roomId = $roomId;
+    }
+
+    function setEventName($eventName) {
+        $this->eventName = $eventName;
+    }
+
     function getCategoryId() {
         return $this->categoryId;
     }

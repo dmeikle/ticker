@@ -25,6 +25,17 @@ class RoomTest extends \tests\BaseTest{
         
         $room->setRoomName('Construction');
         
-        print_r($room->getRoomName());
+        $this->assertEquals('Construction', $room->getRoomName());
     }
+    
+    public function testSetMemberIdList() {
+        $list = array (1,2,3,4,5);
+        
+        $room = new Room();
+        $room->setMemberIdList($list);
+        
+        $this->assertTrue(is_array($room->getMemberIdList()));
+        $this->assertTrue(count($room->getMemberIdList()) == 5);        
+    }
+    
 }

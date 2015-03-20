@@ -22,11 +22,7 @@ class Room {
     
     private $roomId;
     
-    private $allowedMemberList;
-    
-    private $listeners;
-    
-    private $categoryIdList;
+    private $memberIds;
     
     public function getRoomName() {
         return $this->roomName;
@@ -44,61 +40,23 @@ class Room {
         $this->roomId = $roomId;
     }
 
-    public function addCategoryId($categoryId) {
-        $list = $this->getCategoryIdList();
-        $list[] = $categoryId;
-        
-        $this->categoryIdList = $list;
-    }
-
-    protected function getListeners() {
-        if(is_null($this->listeners)) {
-            $this->listeners = array();
-        }
-        
-        return $this->listeners;
-    }
-
-    protected function getAllowedMemberList() {
-        if(is_null($this->allowedMemberList)) {
-            $this->allowedMemberList = array();
-        }
-        
-        return $this->allowedMemberList;
-    }
-
-    protected function getCategoryIdList() {
-        if(is_null($this->categoryIdList)) {
-            $this->categoryIdList = array();
-        }
-        
-        return $this->categoryIdList;
+    public function setMemberIdList(array $ids) {
+        $this->memberIds = $ids;
     }
     
-    public function isListening($categoryId) {
-        return in_array($categoryId, $this->categoryIdList);
+    public function getMemberIdList() {
+        if(is_null($this->memberIds)) {
+            $this->memberIds = array();
+        }
+        
+        return $this->memberIds;
     }
     
-    /**
-     * preconfigured list of members allowed to exist in this room
-     * 
-     * @param array $allowedMemberList
-     */
-    function setAllowedMemberList(array $allowedMemberList) {
-        $this->allowedMemberList = $allowedMemberList;
-    }
-
+//TODO: remove this
     public function notify(Message $message) {
         foreach($this->listeners as $listener) {
             @socket_write($listener->getSocket(),$message->getMessage(),strlen($message->getMessage()));
         }
     }
     
-    public function addListener(Member $member) {
-        $listeners = $this->getListeners();
-        
-        $listeners[] = $member;
-        
-        $this->listeners = $listeners;
-    }
 }

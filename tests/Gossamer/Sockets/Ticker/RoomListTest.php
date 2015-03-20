@@ -13,6 +13,8 @@ namespace tests\Gossamer\Sockets\Ticker;
 
 use Gossamer\Sockets\Ticker\Room;
 use Gossamer\Sockets\Ticker\RoomList;
+use Gossamer\Sockets\Ticker\Member;
+use Gossamer\Sockets\Ticker\Message;
 
 /**
  * RoomListTest
@@ -22,6 +24,21 @@ use Gossamer\Sockets\Ticker\RoomList;
 class RoomListTest extends \tests\BaseTest{
    
     
+    private function generateRoom($id, $name, $exclude = null) {
+        $room = new Room();
+        $room->setRoomId($id);
+        $room->setRoomName($name);
+        $list = array(1,2,3);
+        
+        if(!is_null($exclude)) {
+            unset($list[$exclude]);
+        }
+       
+        $room->setMemberIdList($list);
+        
+        return $room;
+    }
+    
     public function testAddRoom() {
         $list = new RoomList();        
         
@@ -30,21 +47,6 @@ class RoomListTest extends \tests\BaseTest{
         $list->addRoom($this->generateRoom('126', 'test room 126'));
         
         $this->assertEquals(3, $list->getCount());
-    }
-    
-    public function testGetRoomById() {
-        
-        $list = new RoomList();        
-        
-        $list->addRoom($this->generateRoom('123', 'test room 123'));
-        $list->addRoom($this->generateRoom('125', 'test room 125'));
-        $list->addRoom($this->generateRoom('126', 'test room 126'));
-        
-        $room = $list->getRoomById('123');        
-        $this->assertEquals('test room 123', $room->getRoomName());
-        
-        $room = $list->getRoomById('1');          
-        $this->assertNull($room);
     }
     
     public function testSetRoomAsGroup() {
@@ -59,15 +61,52 @@ class RoomListTest extends \tests\BaseTest{
         
         $this->assertEquals(3, $roomList->getCount());
         
-        $room = $roomList->getRoomById('123');        
-        $this->assertEquals('test room 123', $room->getRoomName());
     }
     
-    private function generateRoom($id, $name) {
-        $room = new Room();
-        $room->setRoomId($id);
-        $room->setRoomName($name);
+    public function testAddNewMembersToRoom() {
+        $list = new RoomList();        
+        $list->addRoom($this->generateRoom('123', 'test room 123'));
+        $list->addRoom($this->generateRoom('125', 'test room 125'));
+        $list->addRoom($this->generateRoom('126', 'test room 126'));
         
-        return $room;
+        $member = new Member();
+        $member->setMemberId(1);
+        $member->setMemberName('Dave');
+        $member->setListeningCategoryIdList(array(1,2,3));
+        
+        $list->addMember($member);
+        $list->addMember($member);
+    }
+    
+    /**
+     * @group message
+     */
+    public function testSendMessageToRoom() {
+        $list = new RoomList();    
+     
+        $list->addRoom($this->generateRoom('123', 'test room 123'));
+        //exclude Mike
+        $list->addRoom($this->generateRoom('125', 'test room 125', 1)); //2nd index
+        $list->addRoom($this->generateRoom('126', 'test room 126'));
+      
+        $member = new Member();
+        $member->setMemberId(1);
+        $member->setMemberName('Dave');
+        $member->setListeningCategoryIdList(array(1,2,3));        
+        $list->addMember($member);
+        
+        $member = new Member();
+        $member->setMemberId(2);
+        $member->setMemberName('Mike');
+        $member->setListeningCategoryIdList(array(1));       
+        $list->addMember($member);
+        
+        $message = new Message();
+        $message->setCategoryId(1);
+        $message->setEventName('phase_change');
+        $message->setRoomId(123);
+        $message->setMessage('this is dummy data');
+        
+        $list->notifyRooms($message);
     }
 }

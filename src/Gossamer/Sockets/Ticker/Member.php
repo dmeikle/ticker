@@ -26,11 +26,21 @@ class Member {
     
     private $socket;
     
+    private $ipAddress;
+    
+    function getIpAddress() {
+        return $this->ipAddress;
+    }
+
+    function setIpAddress($ipAddress) {
+        $this->ipAddress = $ipAddress;
+    }
+
     function getSocket() {
         return $this->socket;
     }
 
-    function setSocket($socket) {
+    function setSocket(&$socket) {
         $this->socket = $socket;
     }
 
@@ -68,5 +78,16 @@ class Member {
         $list[] = $categoryId;
         
         $this->listeningCategoryIdList = $list;
+    }
+    
+    public function notify(Message $message) {
+        echo "sending message to " . $this->memberId . "\r\n";
+        socket_write($this->getSocket(),$message->getMessage(),strlen($message->getMessage()));
+            //only notify them if they are interested in hearing about it
+            if(in_array($message->getCategoryId(), $this->getListeningCategoryIdList())) {
+                echo "sending message to " . $this->memberId . "\r\n";
+                @socket_write($this->getSocket(),$message->getMessage(),strlen($message->getMessage()));
+            }
+        
     }
 }

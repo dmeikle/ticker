@@ -2,6 +2,9 @@
 
 namespace Gossamer\Sockets\Ticker;
 
+use Gossamer\Sockets\Ticker\RoomList;
+use Gossamer\Sockets\Ticker\Room;
+
 class Server {
     
     private $host;
@@ -10,11 +13,14 @@ class Server {
         
     private $clients;
     
+    private $concierge;
+    
     public function __construct($host, $port) {
         $this->host = $host;
         $this->port = $port;
-        
+        $this->concierge = new Concierge();
     }
+    
     
     public function execute() {        
         //Create TCP/IP sream socket
@@ -38,7 +44,7 @@ class Server {
                 
                 $this->checkNewSockets($socket, $changed);
                 
-                $this->notifyRooms($changed);
+                $this->listenForMessages($changed);
                 
         }
         // close the listening socket
@@ -51,7 +57,7 @@ class Server {
   
         //returns the socket resources in $changed array
         socket_select($list, $null, $null, 0, 10);
-
+$roomId = 1;
         //check for new socket
         if (in_array($socket, $list)) {
             $socket_new = socket_accept($socket); //accpet new socket
@@ -61,9 +67,13 @@ class Server {
             $this->performHandshaking($header, $socket_new, $this->host, $this->port); //perform websocket handshake
 
             socket_getpeername($socket_new, $ip); //get ip address of connected socket
+            //create the member instance
+            $this->concierge->addSocket($ip, $socket_new);
+            
             $response = $this->mask(json_encode(array('type'=>'system', 'message'=>$ip.' connected'))); //prepare json data
-            $this->sendMessage($response); //notify all users about new connection
-
+            //$this->sendMessage($response); //notify all users about new connection
+           // $this->concierge->notifyRooms($response);
+            $this->concierge->sendMessage($roomId, $response);
            // $response = mask(json_encode(array('type'=>'system', 'message'=>print_r($socket_new, true)))); //prepare json data
             //send_message($response);
             //make room for new socket
@@ -72,21 +82,32 @@ class Server {
         }
     }
     
-    private function notifyRooms(array $list) {
+    private function listenForMessages(array $list) {
         //loop through all connected sockets
-        foreach ($list as $changed_socket) {	
+        foreach ($list as $changed_socket) {
+           
             //check for any incomming data
             while(socket_recv($changed_socket, $buf, 1024, 0) >= 1)
             {
+               
                 $received_text = $this->unmask($buf); //unmask data
+               
                 $tst_msg = json_decode($received_text); //json decode 
+                if(is_null($tst_msg)) {
+                    break;
+                }
+               
                 $user_name = $tst_msg->name; //sender name
+               
                 $user_message = $tst_msg->message; //message text
                 $user_color = $tst_msg->color; //color
-
+                $roomId = $tst_msg->roomId;
+               
                 //prepare data to be sent to client
                 $response_text = $this->mask(json_encode(array('type'=>'usermsg', 'name'=>$user_name, 'message'=>$user_message, 'color'=>$user_color)));
-                $this->sendMessage($response_text); //send data
+                //$this->sendMessage($response_text); //send data
+                $this->concierge->sendMessage($roomId, $response_text);
+                
                 break 2; //exit this loop
             }
 
@@ -96,24 +117,25 @@ class Server {
                 $found_socket = array_search($changed_socket, $this->clients);
                 socket_getpeername($changed_socket, $ip);
                 unset($this->clients[$found_socket]);
-
+               
+                $this->concierge->removeSocket($ip);
                 //notify all users about disconnected connection
-                $response = $this->mask(json_encode(array('type'=>'system', 'message'=>$ip.' disconnected')));
-                $this->sendMessage($response);
+//                $response = $this->mask(json_encode(array('type'=>'system', 'message'=>$ip.' disconnected')));
+//                $this->sendMessage($response);
             }
         }
     }
-    
-    private function sendMessage($msg)
-    {
-            foreach($this->clients as $changed_socket)
-            {
-                    @socket_write($changed_socket,$msg,strlen($msg));
-            }
-            return true;
-    }
-    
-    
+//    
+//    private function sendMessage($msg)
+//    {
+//            foreach($this->clients as $changed_socket)
+//            {
+//                    @socket_write($changed_socket,$msg,strlen($msg));
+//            }
+//            return true;
+//    }
+//    
+//    
     //Unmask incoming framed message
     private function unmask($text) {
 	$length = ord($text[1]) & 127;
