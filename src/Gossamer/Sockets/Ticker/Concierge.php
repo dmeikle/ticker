@@ -32,7 +32,7 @@ class Concierge {
         $room = new Room();
         $room->setRoomId('1');
         $room->setRoomName('emergency');
-        $room->setMemberIdList(array('192.168.2.120', '192.168.2.124', '192.168.2.132'));
+        $room->setMemberIdList(array('192.168.2.120', '192.168.2.124', '192.168.2.132', '192.168.1.139'));
         $this->roomList->addRoom($room);
         
         $room = new Room();
