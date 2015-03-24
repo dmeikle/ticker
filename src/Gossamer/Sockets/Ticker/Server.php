@@ -2,8 +2,10 @@
 
 namespace Gossamer\Sockets\Ticker;
 
-use Gossamer\Sockets\Ticker\RoomList;
-use Gossamer\Sockets\Ticker\Room;
+use Gossamer\Sockets\Ticker\Events;
+use Gossamer\Horus\EventListeners\Event;
+use Gossamer\Horus\EventListeners\EventDispatcher;
+
 
 class Server {
     
@@ -15,14 +17,21 @@ class Server {
     
     private $concierge;
     
+    private $eventDispatcher = null;
+    
     public function __construct($host, $port) {
         $this->host = $host;
         $this->port = $port;
         $this->concierge = new Concierge();
     }
     
+    public function setEventDispatcher(EventDispatcher $dispatcher) {
+        $this->eventDispatcher = $dispatcher;
+    }
     
     public function execute() {        
+        
+       
         //Create TCP/IP sream socket
         $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         //reuseable port
@@ -36,6 +45,7 @@ class Server {
 
         //create & add listning socket to the list
         $this->clients = array($socket);
+        $this->eventDispatcher->dispatch('server', Events::SERVER_STARTUP, new Event(Events::SERVER_STARTUP, array('host' => $this->host, 'port' => $this->port)));
         
         //start endless loop, so that our script doesn't stop
         while (true) {
@@ -60,17 +70,27 @@ class Server {
 $roomId = 1;
         //check for new socket
         if (in_array($socket, $list)) {
-            $socket_new = socket_accept($socket); //accpet new socket
+            $socket_new = socket_accept($socket); //accept new socket
             $this->clients[] = $socket_new; //add socket to client array
 
             $header = socket_read($socket_new, 1024); //read data sent by the socket
             $this->performHandshaking($header, $socket_new, $this->host, $this->port); //perform websocket handshake
-
             socket_getpeername($socket_new, $ip); //get ip address of connected socket
+            
+            $token = $this->checkIsServerConnect($header);
+            
+            if($token !== false) {
+                echo "token is good\r\n";
+                $this->eventDispatcher->dispatch('server', Events::CLIENT_SERVER_CONNECT, new Event(Events::CLIENT_SERVER_CONNECT, array('token' => $token)));
+            //} elseif($this->checkClientTokenIsValid($)) { 
+                
+            }
+            
             //create the member instance
             $this->concierge->addSocket($ip, $socket_new);
-            
+            echo "still here\r\n";
             $response = $this->mask(json_encode(array('type'=>'system', 'message'=>$ip.' connected'))); //prepare json data
+            print_r($response);
             //$this->sendMessage($response); //notify all users about new connection
            // $this->concierge->notifyRooms($response);
             $this->concierge->sendMessage($roomId, $response);
@@ -82,13 +102,28 @@ $roomId = 1;
         }
     }
     
+    private function checkIsServerConnect($header) {
+        $headers = explode("\r\n", $header);
+        print_r($headers);
+        foreach($headers as $row) {
+           
+            if(substr($row, 0, 15) == 'ServerAuthToken') {
+                $tmp = explode(':', $row);
+               
+                return trim($tmp[0]);
+            }
+        }
+        
+        return false;
+    }
+    
     private function listenForMessages(array $list) {
         //loop through all connected sockets
         foreach ($list as $changed_socket) {
-           
             //check for any incomming data
             while(socket_recv($changed_socket, $buf, 1024, 0) >= 1)
             {
+         
                
                 $received_text = $this->unmask($buf); //unmask data
                
@@ -105,6 +140,7 @@ $roomId = 1;
                
                 //prepare data to be sent to client
                 $response_text = $this->mask(json_encode(array('type'=>'usermsg', 'name'=>$user_name, 'message'=>$user_message, 'color'=>$user_color)));
+                
                 //$this->sendMessage($response_text); //send data
                 $this->concierge->sendMessage($roomId, $response_text);
                 

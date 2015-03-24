@@ -12,13 +12,16 @@
 namespace Gossamer\Sockets\Members;
 
 use Gossamer\Sockets\Ticker\Message;
+use Gossamer\Pesedget\Entities\AbstractEntity;
+use Gossamer\Pesedget\Database\SQLInterface;
+
 
 /**
  * Member
  *
  * @author Dave Meikle
  */
-class Member {
+class Member extends AbstractEntity implements SQLInterface{
    
     private $memberId;
     

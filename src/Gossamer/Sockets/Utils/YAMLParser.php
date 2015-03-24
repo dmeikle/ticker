@@ -10,7 +10,7 @@
  */
 
 
-namespace libraries\utils;
+namespace Gossamer\Sockets\Utils;
 
 use Symfony\Component\Yaml\Yaml;
 use Monolog\Logger;

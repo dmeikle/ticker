@@ -1,5 +1,5 @@
 <?php
-namespace Gossamer\Authorization\Commands;
+namespace Gossamer\Sockets\Authorization\Commands;
 
 //use database\DBConnection;
 use Gossamer\Pesedget\Database\SQLInterface;

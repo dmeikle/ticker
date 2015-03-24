@@ -11,12 +11,20 @@
 
 namespace Gossamer\Sockets\Ticker;
 
+use Gossamer\Pesedget\Entities\AbstractEntity;
+use Gossamer\Pesedget\Database\SQLInterface;
+
 /**
  * Room
  *
  * @author Dave Meikle
  */
-class Room {
+class Room extends AbstractEntity implements SQLInterface {
+    
+    public function __construct() {
+        parent::__construct();
+        $this->tablename = 'TickerRooms';
+    }
     
     private $roomName;
     
@@ -52,11 +60,16 @@ class Room {
         return $this->memberIds;
     }
     
-//TODO: remove this
-    public function notify(Message $message) {
-        foreach($this->listeners as $listener) {
-            @socket_write($listener->getSocket(),$message->getMessage(),strlen($message->getMessage()));
-        }
+    public function populate($params = array()) {
+      
+        $this->roomId = $params['id'];
+        $this->roomName = $params['roomName'];       
     }
+//TODO: remove this
+//    public function notify(Message $message) {
+//        foreach($this->listeners as $listener) {
+//            @socket_write($listener->getSocket(),$message->getMessage(),strlen($message->getMessage()));
+//        }
+//    }
     
 }

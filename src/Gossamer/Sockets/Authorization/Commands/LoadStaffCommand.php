@@ -8,12 +8,18 @@
  *  For the full copyright and license information, please view the LICENSE
  *  file that was distributed with this source code.
  */
+namespace Gossamer\Sockets\Authorization\Commands;
+
+
 
 /**
  * LoadMemberCommand
  *
  * @author Dave Meikle
  */
-class LoadMemberCommand {
+class LoadStaffCommand extends LoadMemberCommand{
     
+   
+  
+
 }

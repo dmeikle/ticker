@@ -9,11 +9,18 @@
  *  file that was distributed with this source code.
  */
 
+namespace Gossamer\Sockets\Ticker;
+
 /**
- * Staff
+ * Events
  *
  * @author Dave Meikle
  */
-class Staff {
+class Events {
     
+    const CLIENT_SERVER_CONNECT = 'client_server_connect';
+    
+    const SERVER_STARTUP = 'server_startup';
+    
+    const SERVER_INITIATE = 'server_initiate';
 }

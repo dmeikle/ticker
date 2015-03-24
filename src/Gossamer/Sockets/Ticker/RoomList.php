@@ -33,9 +33,11 @@ class RoomList {
         if(!array_key_exists($room->getRoomId(), $rooms)) {
             $rooms[$room->getRoomId()] = $room;
         }
-        
+       
         $this->rooms = $rooms;
-        print_r($this->rooms);
+        $roomMemberList = $this->getRoomMemberList();
+        $roomMemberList[$room->getRoomId()] = $room->getMemberIdList();
+        print_r($roomMemberList);
     }
  
     private function getRooms() {
@@ -111,7 +113,8 @@ class RoomList {
     }
     
     public function notifyRooms(Message $message) {
-        
+        echo "roomId: ".$message->getRoomId()."\r\n";
+        print_r($this->getRoomMemberList());
         //check to see if the intended message has an existing room
         if(!array_key_exists($message->getRoomId(), $this->getRoomMemberList())) {
            echo 'returning - no roomId exists with '.$message->getRoomId()."\r\n";
