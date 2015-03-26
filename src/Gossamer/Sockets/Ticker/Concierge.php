@@ -34,6 +34,7 @@ class Concierge {
     }
     
     private function initRooms() {
+
         $roomManager = new RoomManager();
         
         $roomList = $roomManager->loadRoomList();
