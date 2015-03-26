@@ -1,11 +1,11 @@
 <?php
 
-namespace Gossamer\Sockets\Ticker;
+namespace Gossamer\Sockets\Servers;
 
 use Gossamer\Sockets\Ticker\Events;
 use Gossamer\Horus\EventListeners\Event;
 use Gossamer\Horus\EventListeners\EventDispatcher;
-
+use Gossamer\Sockets\Ticker\Concierge;
 
 class Server {
     
@@ -51,10 +51,13 @@ class Server {
         while (true) {
                 //manage multiple connections
                 $changed = $this->clients;
-                
+                try{
                 $this->checkNewSockets($socket, $changed);
                 
                 $this->listenForMessages($changed);
+                }catch(\Exception $e) {
+                    echo $e->getMessage();
+                }
                 
         }
         // close the listening socket
@@ -71,27 +74,31 @@ $roomId = 1;
         //check for new socket
         if (in_array($socket, $list)) {
             $socket_new = socket_accept($socket); //accept new socket
-            $this->clients[] = $socket_new; //add socket to client array
-
+            
             $header = socket_read($socket_new, 1024); //read data sent by the socket
-            $this->performHandshaking($header, $socket_new, $this->host, $this->port); //perform websocket handshake
+           
             socket_getpeername($socket_new, $ip); //get ip address of connected socket
             
             $token = $this->checkIsServerConnect($header);
-            
+            $response = null;
             if($token !== false) {
-                echo "token is good\r\n";
-                $this->eventDispatcher->dispatch('server', Events::CLIENT_SERVER_CONNECT, new Event(Events::CLIENT_SERVER_CONNECT, array('token' => $token)));
-            //} elseif($this->checkClientTokenIsValid($)) { 
-                
+                //throws an error if token invalid
+                $this->eventDispatcher->dispatch('server', Events::CLIENT_SERVER_CONNECT, new Event(Events::CLIENT_SERVER_CONNECT, array('token' => $token, 'ipAddress' => $ip, 'header' => $header)));
+                $upgrade = "this is a test\r\n";
+                //TODO: add getInstruction() and then exit this method
+               $response = "newtoken123";
+            } else {
+                $this->checkIsValidClient($header);
             }
-            
+             $this->performHandshaking($header, $socket_new, $this->host, $this->port, $response); //perform websocket handshake
+            $this->clients[] = $socket_new; //add socket to client array
+
             //create the member instance
             $this->concierge->addSocket($ip, $socket_new);
             echo "still here\r\n";
             $response = $this->mask(json_encode(array('type'=>'system', 'message'=>$ip.' connected'))); //prepare json data
             print_r($response);
-            //$this->sendMessage($response); //notify all users about new connection
+           // $this->sendMessage($response); //notify all users about new connection
            // $this->concierge->notifyRooms($response);
             $this->concierge->sendMessage($roomId, $response);
            // $response = mask(json_encode(array('type'=>'system', 'message'=>print_r($socket_new, true)))); //prepare json data
@@ -102,6 +109,10 @@ $roomId = 1;
         }
     }
     
+    private function checkIsValidClient($header) {
+        print_r($header);
+    }
+    
     private function checkIsServerConnect($header) {
         $headers = explode("\r\n", $header);
         print_r($headers);
@@ -110,7 +121,7 @@ $roomId = 1;
             if(substr($row, 0, 15) == 'ServerAuthToken') {
                 $tmp = explode(':', $row);
                
-                return trim($tmp[0]);
+                return trim($tmp[1]);
             }
         }
         
@@ -120,18 +131,20 @@ $roomId = 1;
     private function listenForMessages(array $list) {
         //loop through all connected sockets
         foreach ($list as $changed_socket) {
+            echo "check for messages\r\n";
             //check for any incomming data
             while(socket_recv($changed_socket, $buf, 1024, 0) >= 1)
             {
-         
+         echo "received message\r\n";
                
                 $received_text = $this->unmask($buf); //unmask data
                
-                $tst_msg = json_decode($received_text); //json decode 
+                $tst_msg = json_decode($received_text); //json decode
+                echo "here is message:\r\n";
+               print_r($tst_msg); 
                 if(is_null($tst_msg)) {
                     break;
                 }
-               
                 $user_name = $tst_msg->name; //sender name
                
                 $user_message = $tst_msg->message; //message text
@@ -210,7 +223,7 @@ $roomId = 1;
     }
 
     //handshake new client.
-    private function performHandshaking($receved_header,$client_conn, $host, $port)
+    private function performHandshaking($receved_header,$client_conn, $host, $port, $response = null)
     {
 	$headers = array();
 	$lines = preg_split("/\r\n/", $receved_header);
@@ -230,8 +243,11 @@ $roomId = 1;
 	"Upgrade: websocket\r\n" .
 	"Connection: Upgrade\r\n" .
 	"WebSocket-Origin: $host\r\n" .
-	"WebSocket-Location: ws://$host:$port/demo/shout.php\r\n".
+	"WebSocket-Location: ws://$host:$port\r\n".
+        "NEW_TOKEN: $response\r\n".
 	"Sec-WebSocket-Accept:$secAccept\r\n\r\n";
 	socket_write($client_conn,$upgrade,strlen($upgrade));
     }
+    
+    
 }

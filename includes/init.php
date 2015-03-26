@@ -24,6 +24,7 @@ $loader = new Composer\Autoload\ClassLoader();
 // register classes with namespaces
       $loader->add('Gossamer\\Sockets', __SITE_PATH .'/src');
       $loader->add('Gossamer\\Horus', __SITE_PATH .'/vendor/gossamer/horus/src');
+      $loader->add('Gossamer\\Aker', __SITE_PATH .'/vendor/gossamer/aker/src');
       $loader->add('Gossamer\\Pesedget', __SITE_PATH .'/vendor/gossamer/pesedget/src');
       $loader->add('Gossamer\\Caching', __SITE_PATH .'/vendor/gossamer/caching/src');
 

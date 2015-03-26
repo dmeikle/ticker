@@ -1,5 +1,6 @@
 <?php
 
+
 $site_path =  realpath(dirname(__FILE__));// strip the /web from it
 require_once($site_path . '/includes/init.php');
 
@@ -7,7 +8,7 @@ require_once($site_path . '/includes/init.php');
 use Gossamer\Sockets\Utils\YAMLParser;
 use Gossamer\Horus\EventListeners\Event;
 use Gossamer\Horus\EventListeners\EventDispatcher;
-use Gossamer\Sockets\Ticker\Server;
+use Gossamer\Sockets\Servers\Server;
 use Gossamer\Horus\Core\Request;
 use Gossamer\Sockets\Ticker\Events;
 

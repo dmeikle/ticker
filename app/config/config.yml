@@ -7,7 +7,8 @@ server:
     listeners:
         - { 'event': 'server_initiate', 'listener': '\Gossamer\Sockets\EventListeners\ServerEventListener' }
         - { 'event': 'server_startup', 'listener': '\Gossamer\Sockets\EventListeners\ServerEventListener' }
-        - { 'event': 'client_server_connect', 'listener': '\Gossamer\Sockets\EventListeners\ServerEventListener', 'datasource': 'mysql' }
+        - { 'event': 'client_server_connect', 'listener': '\Gossamer\Sockets\EventListeners\CheckServerCredentialsListener' }
+        - { 'event': 'client_server_connect', 'listener': '\Gossamer\Sockets\EventListeners\GetServerRequestListener' }
         
 #this is an afterthought. Originally the system was written with Monolog\Logger
 #being a pervasive aspect of the logging. In hindsight this should have been

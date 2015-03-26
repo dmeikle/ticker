@@ -13,6 +13,8 @@ namespace Gossamer\Sockets\EventListeners;
 use Gossamer\Horus\EventListeners\AbstractListener;
 use Gossamer\Horus\EventListeners\Event;
 use Gossamer\Pesedget\Database\EntityManager;
+use Gossamer\Pesedget\Commands\GetCommand;
+use Gossamer\Sockets\Entities\ServerAuthenticationToken;
 
 /**
  * ServerEventListener
@@ -31,13 +33,5 @@ class ServerEventListener extends AbstractListener {
         echo '>> Ticker Server sucessfully started on ' . $event->getParam('host') . ':' . $event->getParam('port') . "\r\n";
     }
     
-    /**
-     * used to check authorization token against an allowable list
-     * 
-     * @param Event $event
-     */
-    public function on_client_server_connect(Event $event) {
-        echo "here is connection\r\n";
-        print_r(EntityManager::getInstance()->getConnection());
-    }
+    
 }
