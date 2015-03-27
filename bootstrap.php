@@ -18,7 +18,7 @@ use Gossamer\Sockets\Ticker\Events;
 $config = loadConfiguration();
 
 $eventDispatcher = new EventDispatcher($config, buildLogger($config), new Request() );
-echo "dispatch event\r\n";
+
 $eventDispatcher->dispatch('server', Events::SERVER_INITIATE, new Event(Events::SERVER_INITIATE, array('host' => $config['server']['host'], 'port' => $config['server']['port'])));
 $server = new Server($config['server']['host'], $config['server']['port']);
 $server->setEventDispatcher($eventDispatcher);

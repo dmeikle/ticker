@@ -24,10 +24,10 @@ class RoomList {
     
     private $members;
     
-    private $roomMemberList;
+    private $roomMemberList = array();
     
     function addRoom(Room $room) {
-        
+       
         $rooms = $this->getRooms();
         
         if(!array_key_exists($room->getRoomId(), $rooms)) {
@@ -37,7 +37,7 @@ class RoomList {
         $this->rooms = $rooms;
         $roomMemberList = $this->getRoomMemberList();
         $roomMemberList[$room->getRoomId()] = $room->getMemberIdList();
-        print_r($roomMemberList);
+        $this->roomMemberList = $roomMemberList;
     }
  
     private function getRooms() {
@@ -53,7 +53,7 @@ class RoomList {
     }
     
     public function addMember(Member $member) {
-        echo "add member\r\n";
+     
         $roomMemberList = $this->getRoomMemberList();
         
         $members = $this->getMembers();
@@ -63,11 +63,9 @@ class RoomList {
         foreach($this->getRooms() as $room) {
             //check to see if they're allowed access and not already in this room
             if($this->memberAllowedAccess($member, $room) && !$this->checkMemberInRoom($member, $room, $roomMemberList)) {
-                echo "adding to " . $room->getRoomName()."\r\n";
+               
                 $this->roomMemberList[$room->getRoomId()][] = $member->getMemberId();
-            } else {
-                echo "not adding to " . $room->getRoomName()."\r\n";
-            }
+            } 
         }
         
     }
@@ -113,27 +111,30 @@ class RoomList {
     }
     
     public function notifyRooms(Message $message) {
-        echo "roomId: ".$message->getRoomId()."\r\n";
-        print_r($this->getRoomMemberList());
+       
         //check to see if the intended message has an existing room
         if(!array_key_exists($message->getRoomId(), $this->getRoomMemberList())) {
-           echo 'returning - no roomId exists with '.$message->getRoomId()."\r\n";
+          
             return;
         }
-        echo "SENDING MESSAGE\r\n";
-        foreach($this->getRoomMemberList($message->getRoomId()) as $memberId) {
+     
+        $recipientList = $this->getRoomMemberList($message->getRoomId());
+     
+        foreach($recipientList as $memberId) {
+           
             if(array_key_exists($memberId, $this->members)) {
+               
                 $this->members[$memberId]->notify($message);
             }
         }
-        print_r($this->members);
+        
     }
     
     public function removeMember($memberId) {               
         
         unset($this->members[$memberId]);
         foreach($this->getRoomMemberList() as $room) {
-            print_r($room);
+          
             //remove this member from any rooms
             unset($room[$memberId]);
         }

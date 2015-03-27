@@ -12,6 +12,7 @@ require_once(__SITE_PATH . '/../vendor/composer/ClassLoader.php');
 
       // register classes with namespaces
       $loader->add('Gossamer\\Sockets', __SITE_PATH .'/../src');
+      $loader->add('Gossamer\\Horus', __SITE_PATH .'/../vendor/gossamer/horus/src');
       $loader->add('Gossamer\\Pesedget', __SITE_PATH .'/../vendor/gossamer/pesedget/src');
       $loader->add('Gossamer\\Caching', __SITE_PATH .'/../vendor/gossamer/caching/src');
 

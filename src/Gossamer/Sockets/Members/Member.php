@@ -42,11 +42,12 @@ class Member extends AbstractEntity implements SQLInterface{
     }
 
     function getSocket() {
+       
         return $this->socket;
     }
 
     function setSocket(&$socket) {
-        $this->socket = $socket;
+        $this->socket = $socket;       
     }
 
     function getMemberId() {
@@ -86,11 +87,11 @@ class Member extends AbstractEntity implements SQLInterface{
     }
     
     public function notify(Message $message) {
-        echo "sending message to " . $this->memberId . "\r\n";
+      
         socket_write($this->getSocket(),$message->getMessage(),strlen($message->getMessage()));
             //only notify them if they are interested in hearing about it
             if(in_array($message->getCategoryId(), $this->getListeningCategoryIdList())) {
-                echo "sending message to " . $this->memberId . "\r\n";
+               
                 @socket_write($this->getSocket(),$message->getMessage(),strlen($message->getMessage()));
             }
         

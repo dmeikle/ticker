@@ -18,10 +18,18 @@ namespace Gossamer\Sockets\Ticker;
  */
 class Events {
     
-    const CLIENT_SERVER_CONNECT = 'client_server_connect';
-    
+    /* server events */
     const SERVER_STARTUP = 'server_startup';
     
     const SERVER_INITIATE = 'server_initiate';
+    
+    const CLIENT_SERVER_CONNECT = 'client_server_connect';
+    
+    const CLIENT_SERVER_REQUEST = 'client_server_request';
+    
+    
+    /* client events */
+    const CLIENT_CONNECT = 'client_connect';
+    
 }
  

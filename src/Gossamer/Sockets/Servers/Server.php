@@ -6,14 +6,20 @@ use Gossamer\Sockets\Ticker\Events;
 use Gossamer\Horus\EventListeners\Event;
 use Gossamer\Horus\EventListeners\EventDispatcher;
 use Gossamer\Sockets\Ticker\Concierge;
+use Gossamer\Sockets\Actions\Actions;
+use Gossamer\Sockets\Authorization\TokenManager;
 
 class Server {
+    
+    use \Gossamer\Sockets\Traits\SendMessageTrait;
     
     private $host;
     
     private $port;
         
     private $clients;
+    
+    private $tokenManager;
     
     private $concierge;
     
@@ -22,7 +28,7 @@ class Server {
     public function __construct($host, $port) {
         $this->host = $host;
         $this->port = $port;
-        $this->concierge = new Concierge();
+        $this->concierge = new Concierge();        
     }
     
     public function setEventDispatcher(EventDispatcher $dispatcher) {
@@ -31,6 +37,7 @@ class Server {
     
     public function execute() {        
         
+        $this->tokenManager = new TokenManager();
        
         //Create TCP/IP sream socket
         $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
@@ -49,16 +56,15 @@ class Server {
         
         //start endless loop, so that our script doesn't stop
         while (true) {
-                //manage multiple connections
-                $changed = $this->clients;
-                try{
+            //manage multiple connections
+            $changed = $this->clients;
+            try{
                 $this->checkNewSockets($socket, $changed);
-                
                 $this->listenForMessages($changed);
-                }catch(\Exception $e) {
-                    echo $e->getMessage();
-                }
+            }catch(\Exception $e) {
                 
+                echo " error occurred: " . $e->getMessage();
+            }                
         }
         // close the listening socket
         socket_close($sock);
@@ -67,10 +73,10 @@ class Server {
     
     private function checkNewSockets($socket, array &$list) {
         $null = NULL;
-  
+ 
         //returns the socket resources in $changed array
         socket_select($list, $null, $null, 0, 10);
-$roomId = 1;
+
         //check for new socket
         if (in_array($socket, $list)) {
             $socket_new = socket_accept($socket); //accept new socket
@@ -78,47 +84,62 @@ $roomId = 1;
             $header = socket_read($socket_new, 1024); //read data sent by the socket
            
             socket_getpeername($socket_new, $ip); //get ip address of connected socket
-            
+            socket_set_option($socket_new, SOL_SOCKET, SO_KEEPALIVE, 1);
             $token = $this->checkIsServerConnect($header);
             $response = null;
+
             if($token !== false) {
+                $event = new Event(Events::CLIENT_SERVER_CONNECT, 
+                        array(
+                            'token' => $token, 
+                            'ipAddress' => $ip, 
+                            'header' => $header, 
+                            'tokenManager' => $this->tokenManager,
+                            'concierge' => $this->concierge
+                        ));
                 //throws an error if token invalid
-                $this->eventDispatcher->dispatch('server', Events::CLIENT_SERVER_CONNECT, new Event(Events::CLIENT_SERVER_CONNECT, array('token' => $token, 'ipAddress' => $ip, 'header' => $header)));
-                $upgrade = "this is a test\r\n";
-                //TODO: add getInstruction() and then exit this method
-               $response = "newtoken123";
-            } else {
-                $this->checkIsValidClient($header);
+                $this->eventDispatcher->dispatch('server', Events::CLIENT_SERVER_CONNECT, $event);
+                $this->eventDispatcher->dispatch('server', Events::CLIENT_SERVER_REQUEST, $event);
+               
+               //a new token has been generated in one of the handlers
+               $response = $event->getParam(Actions::ACTION_RESPONSE);
+            } else {                
+                $event = new Event(Events::CLIENT_CONNECT, array('ipAddress' => $ip, 'header' => $header, 'tokenManager' => $this->tokenManager));
+                $this->eventDispatcher->dispatch('client', Events::CLIENT_CONNECT, $event);
+                $response = $this->mask(json_encode(array('type'=>'system', 'message'=>$ip.' connected'))); //prepare json data
+                $this->sendMessage($response); //notify all users about new connection
+                $this->concierge->addSocket($event->getParam('ClientToken'), $socket_new, $this->getClientId($header));
             }
-             $this->performHandshaking($header, $socket_new, $this->host, $this->port, $response); //perform websocket handshake
+            $this->performHandshaking($header, $socket_new, $this->host, $this->port, $response); //perform websocket handshake
             $this->clients[] = $socket_new; //add socket to client array
 
-            //create the member instance
-            $this->concierge->addSocket($ip, $socket_new);
-            echo "still here\r\n";
-            $response = $this->mask(json_encode(array('type'=>'system', 'message'=>$ip.' connected'))); //prepare json data
-            print_r($response);
-           // $this->sendMessage($response); //notify all users about new connection
-           // $this->concierge->notifyRooms($response);
-            $this->concierge->sendMessage($roomId, $response);
-           // $response = mask(json_encode(array('type'=>'system', 'message'=>print_r($socket_new, true)))); //prepare json data
-            //send_message($response);
             //make room for new socket
             $found_socket = array_search($socket, $list);
             unset($list[$found_socket]);
         }
     }
     
-    private function checkIsValidClient($header) {
-        print_r($header);
-    }
-    
-    private function checkIsServerConnect($header) {
+    private function getClientId($header) {
         $headers = explode("\r\n", $header);
-        print_r($headers);
+      
         foreach($headers as $row) {
            
-            if(substr($row, 0, 15) == 'ServerAuthToken') {
+            if(substr($row, 0, 8) == 'StaffId:') {
+                $tmp = explode(': ', $row);
+              
+                return trim($tmp[1]);
+            }
+        }
+        
+        return false;
+    }
+      
+    private function checkIsServerConnect($header) {
+        $headers = explode("\r\n", $header);
+       
+        foreach($headers as $row) {
+           
+            if(substr($row, 0, 16) == 'ServerAuthToken:') {
                 $tmp = explode(':', $row);
                
                 return trim($tmp[1]);
@@ -131,17 +152,13 @@ $roomId = 1;
     private function listenForMessages(array $list) {
         //loop through all connected sockets
         foreach ($list as $changed_socket) {
-            echo "check for messages\r\n";
             //check for any incomming data
             while(socket_recv($changed_socket, $buf, 1024, 0) >= 1)
-            {
-         echo "received message\r\n";
-               
+            {               
                 $received_text = $this->unmask($buf); //unmask data
                
                 $tst_msg = json_decode($received_text); //json decode
-                echo "here is message:\r\n";
-               print_r($tst_msg); 
+               
                 if(is_null($tst_msg)) {
                     break;
                 }
@@ -153,9 +170,9 @@ $roomId = 1;
                
                 //prepare data to be sent to client
                 $response_text = $this->mask(json_encode(array('type'=>'usermsg', 'name'=>$user_name, 'message'=>$user_message, 'color'=>$user_color)));
-                
-                //$this->sendMessage($response_text); //send data
-                $this->concierge->sendMessage($roomId, $response_text);
+               
+                $this->sendMessage($response_text); //send data
+                //$this->concierge->sendMessage($roomId, $response_text);
                 
                 break 2; //exit this loop
             }
@@ -164,7 +181,7 @@ $roomId = 1;
             if ($buf === false) { // check disconnected client
                 // remove client for $clients array
                 $found_socket = array_search($changed_socket, $this->clients);
-                socket_getpeername($changed_socket, $ip);
+                @socket_getpeername($changed_socket, $ip);
                 unset($this->clients[$found_socket]);
                
                 $this->concierge->removeSocket($ip);
@@ -174,53 +191,7 @@ $roomId = 1;
             }
         }
     }
-//    
-//    private function sendMessage($msg)
-//    {
-//            foreach($this->clients as $changed_socket)
-//            {
-//                    @socket_write($changed_socket,$msg,strlen($msg));
-//            }
-//            return true;
-//    }
-//    
-//    
-    //Unmask incoming framed message
-    private function unmask($text) {
-	$length = ord($text[1]) & 127;
-	if($length == 126) {
-		$masks = substr($text, 4, 4);
-		$data = substr($text, 8);
-	}
-	elseif($length == 127) {
-		$masks = substr($text, 10, 4);
-		$data = substr($text, 14);
-	}
-	else {
-		$masks = substr($text, 2, 4);
-		$data = substr($text, 6);
-	}
-	$text = "";
-	for ($i = 0; $i < strlen($data); ++$i) {
-		$text .= $data[$i] ^ $masks[$i%4];
-	}
-	return $text;
-    }
 
-    //Encode message for transfer to client.
-    private function mask($text)
-    {
-	$b1 = 0x80 | (0x1 & 0x0f);
-	$length = strlen($text);
-	
-	if($length <= 125)
-		$header = pack('CC', $b1, $length);
-	elseif($length > 125 && $length < 65536)
-		$header = pack('CCn', $b1, 126, $length);
-	elseif($length >= 65536)
-		$header = pack('CCNN', $b1, 127, $length);
-	return $header.$text;
-    }
 
     //handshake new client.
     private function performHandshaking($receved_header,$client_conn, $host, $port, $response = null)
@@ -244,7 +215,7 @@ $roomId = 1;
 	"Connection: Upgrade\r\n" .
 	"WebSocket-Origin: $host\r\n" .
 	"WebSocket-Location: ws://$host:$port\r\n".
-        "NEW_TOKEN: $response\r\n".
+        "$response\r\n".
 	"Sec-WebSocket-Accept:$secAccept\r\n\r\n";
 	socket_write($client_conn,$upgrade,strlen($upgrade));
     }

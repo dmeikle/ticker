@@ -22,6 +22,7 @@ class CheckServerCredentialsListener extends BaseListener {
     
     
     public function on_client_server_connect(Event $event) {
+        
         if(!$this->checkServer($event->getParam('token'), $event->getParam('ipAddress'))) {
             $this->logger->addError('CheckServerCredentialsListener::on_client_server_connect has mismatched serverAuth information');
             throw new UnauthorizedAccessException($event->getParam('ipAddress') . ' is not authorized');
