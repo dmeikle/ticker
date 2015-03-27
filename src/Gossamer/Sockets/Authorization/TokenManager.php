@@ -38,6 +38,9 @@ class TokenManager {
     public function checkToken($ip, $token) {
         //seems like a logical place to call this based on public methods
         //$this->pruneTokens();
+        if(strlen($token) == 0) {
+            return false;
+        }
         
         if(!array_key_exists($token, $this->tokens)) {
            

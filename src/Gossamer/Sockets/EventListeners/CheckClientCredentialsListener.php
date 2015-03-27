@@ -38,7 +38,7 @@ class CheckClientCredentialsListener extends AbstractListener{
       
         foreach($headers as $row) {
            
-            if(substr($row, 0, 4) == 'GET ') {
+            if(substr($row, 0, 4) == 'GET ' && (strpos('&token=', $row) > 0 || strpos('?token=', $row))) {
                 $tmp = explode('token=', $row);
                 $chunks = explode(' ', $tmp[1]);
                 return trim($chunks[0]);

@@ -29,6 +29,7 @@ class GenerateNewTokenAction implements ActionInterface{
     public function execute(Event $event = null) {
         $token = uniqid();
         $event->setParam(Actions::ACTION_RESPONSE, 'NEW_TOKEN: ' . $token);
+        print_r($event->getParams());
         $event->getParam('tokenManager')->setToken($this->getClientIp($event->getParam('header')), $token, $this->getStaffId($header));
     }
 
