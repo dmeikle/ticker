@@ -25,7 +25,7 @@ class ServerEventListener extends AbstractListener {
     
     public function on_server_initiate(Event $event) {        
         $this->logger->addInfo('Ticker Server initiating startup on ' . $event->getParam('host') . ':' . $event->getParam('port'));
-        echo '>>Ticker Server initiating startup on ' . $event->getParam('host') . ':' . $event->getParam('port') . "\r\n";
+        echo '>> Ticker Server initiating startup on ' . $event->getParam('host') . ':' . $event->getParam('port') . "\r\n";
     }
     
     public function on_server_startup(Event $event) {

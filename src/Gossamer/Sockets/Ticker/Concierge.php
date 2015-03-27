@@ -57,7 +57,7 @@ class Concierge {
 //        $room->setRoomId('2');
 //        $room->setRoomName('construction');
 //        $this->roomList->addRoom($room);
-        print_r($this->roomList);
+       
     }
     
     private function loadRoomStaff($roomId) {
@@ -78,8 +78,7 @@ class Concierge {
      */
     public function addSocket($token, &$socket, $id) {
         $member = new Member();
-        print_r($token);
-        echo "addsocket::memberId " . $token['id'] . "\r\n";
+      
         $member->setMemberId( $token['id']);
         $member->setSocket($socket);
         //$member->setMemberId($this->memberCount++);

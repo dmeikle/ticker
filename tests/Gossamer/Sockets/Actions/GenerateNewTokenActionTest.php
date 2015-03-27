@@ -26,6 +26,5 @@ class GenerateNewTokenActionTest extends \tests\BaseTest {
         $event = new Event('any_event', array());
         $action->execute($event);
         
-        print_r($event);
     }
 }

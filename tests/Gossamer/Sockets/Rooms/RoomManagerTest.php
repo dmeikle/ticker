@@ -23,7 +23,7 @@ class RoomManagerTest extends \tests\BaseTest{
     public function testLoadRoomList() {
         $mgr = new RoomManager();
         $list = $mgr->loadRoomList();
-       print_r($list);
+     
         $this->assertTrue(is_array($list));
         if(count($list) > 0) {
             $this->assertArrayHasKey('id', current($list));
